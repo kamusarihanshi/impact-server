@@ -1,6 +1,6 @@
 from flask import Blueprint
 from flask_restful import Api,Resource,reqparse
-from models import db,Products,Reviews
+from models import db,Review,Product
 from flask_cors import CORS
 from datetime import datetime
 product_bp=Blueprint('product',__name__,url_prefix='/product')
@@ -23,12 +23,12 @@ product_parser.add_argument('updated_at',type=datetime,required=True)
 
 class ProductResource(Resource):
     def get(self,id):
-        product=Products.query.get_or_404(id)
+        product=Product.query.get_or_404(id)
         return {'id':product.id,'name':product.name,'price':product.price,'description':product.description,'stock':product.stock,'image_url':product.image_url,'category_id':product.category_id,'created_at':product.created_at,'updated':product}
     
     def put(self,id):
         data=product_parser.parse_args()
-        product=Products.query.get_or_404(id)
+        product=Product.query.get_or_404(id)
         product.name=data['name']
         product.price=data['price']
         product.description=data['description']
@@ -41,7 +41,7 @@ class ProductResource(Resource):
         return{'message':'product updated successfully'}
     
     def delete(self,id):
-        product=Products.query.get_or_404(id)
+        product=Product.query.get_or_404(id)
         db.session.delete(product)
         db.session.commit()
         return{'message':'product deleted successfully'}
@@ -51,18 +51,18 @@ product_api.add_resource(ProductResource,'/<int:id>')
 
 class ProductList(Resource):
     def get(self):
-        products=Products.query.all()
+        products=Product.query.all()
         return [{'id':product.id,'name':product.name,'price':product.price,'description':product.description,'stock':product.stock,'image_url':product.image_url,'category_id':product.category_id,'created_at':product.created_at,'updated':product} for product in products]
     
     def post(self):
         data=product_parser.parse_args()
-        new_product=Products(name=data['name'],price=data['price'],description=data['description'],stock=data['stock'],image_url=data['image_url'],category_id=data['category_id'],created_at=data['created_at'],updated_at=data['updated_at'])
+        new_product=Product(name=data['name'],price=data['price'],description=data['description'],stock=data['stock'],image_url=data['image_url'],category_id=data['category_id'],created_at=data['created_at'],updated_at=data['updated_at'])
         db.session.add(new_product)
         db.session.commit()
         return{'message':'product added successfully'},201
     
     def delete(self):
-        products=Products.query.all()
+        products=Product.query.all()
         db.session.delete(products)
         db.session.commit()
         return{'message':'All products deleted successfully'}
@@ -72,7 +72,7 @@ product_api.add_resource(ProductList,'/list_products')
 
 class ProductCategory(Resource):
     def get(self,id):
-        products=Products.query.filter_by(category_id=id).all()
+        products=Product.query.filter_by(category_id=id).all()
         return [{'id':product.id,'name':product.name,'price':product.price,'description':product.description,'stock':product.stock,'image_url':product.image_url,'category_id':product.category_id,'created_at':product.created_at,'updated':product} for product in products]
     
 
@@ -81,10 +81,10 @@ product_api.add_resource(ProductCategory,'/category/<int:id>')
 
 class ProductReviews(Resource):
     def get(self,id):
-        product=Products.query.get(id)
+        product=Product.query.get(id)
         if product is None:
             return {'message':'Product not found'},404
-        reviews = Reviews.query.filter_by(product_id=id).all()
+        reviews = Review.query.filter_by(product_id=id).all()
         
         # Format the reviews for the response
         review_list = [
